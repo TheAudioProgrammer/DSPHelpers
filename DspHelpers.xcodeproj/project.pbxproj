@@ -6,10 +6,6 @@
 	objectVersion = 50;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		94D77FF724CC6EFD005BDAC0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 94D77FF624CC6EFD005BDAC0 /* main.cpp */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXCopyFilesBuildPhase section */
 		94D77FF124CC6EFD005BDAC0 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -24,7 +20,7 @@
 
 /* Begin PBXFileReference section */
 		94D77FF324CC6EFD005BDAC0 /* DspHelpers */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DspHelpers; sourceTree = BUILT_PRODUCTS_DIR; };
-		94D77FF624CC6EFD005BDAC0 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		94D77FFE24CC6F22005BDAC0 /* DspHelpers.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = DspHelpers.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +53,7 @@
 		94D77FF524CC6EFD005BDAC0 /* DspHelpers */ = {
 			isa = PBXGroup;
 			children = (
-				94D77FF624CC6EFD005BDAC0 /* main.cpp */,
+				94D77FFE24CC6F22005BDAC0 /* DspHelpers.hpp */,
 			);
 			path = DspHelpers;
 			sourceTree = "<group>";
@@ -118,7 +114,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				94D77FF724CC6EFD005BDAC0 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
