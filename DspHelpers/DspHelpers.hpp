@@ -62,8 +62,8 @@ public:
         peakVal = 0;
     }
     
-    /** Find the root mean square of a signal.  The max window size is 192000, which is one second of audio at 192 kHz.
-        std::pow was deliberately avoided because multiplying directly is more efficient.
+    /**  Find the root mean square of a signal.  The max window size is 192000, which is one second of audio at 192 kHz.
+         std::pow was deliberately avoided because multiplying directly is more efficient.
      */
     void updateRms (Type sample, const int windowSize) noexcept
     {
@@ -106,6 +106,51 @@ private:
     
     int index = 0;
     int sum = 0;
+};
+
+// =================================================================
+
+template <typename Type>
+class SineWave
+{
+public:
+    /** Pass the sample rate to the DSP algorithm*/
+    void prepareToPlay (double& sampleRate)
+    {
+        currentSampleRate = sampleRate;
+        timeStep = 1 / currentSampleRate;
+    }
+    
+    /**  Generate a sine wave with the equation (2 * pi * frequency * time + phaseOffset).
+         This isn't the most efficient way to generate a sine wave, but it's a good learning
+         tool for beginners who are generating sound and learning DSP for the first time.
+     */
+    Type calculate (const Type& frequency, const int phaseOffset = 0)
+    {
+        // Ensure our frequency is in the range of human hearing
+        assert (frequency >= 20 && frequency <= 20000);
+        
+        // You must set your sample rate in prepareToPlay
+        assert (currentSampleRate > 0);
+        
+        // Make sure we're not running off the edge of our time max
+        if (currentTime >= std::numeric_limits<float>::max())
+            currentTime = 0.0;
+        
+        auto sample = std::sin (2.0 * pi * frequency * currentTime + phaseOffset);
+        
+        // Need to increment time for the next time this function calls
+        currentTime += timeStep;
+        
+        return sample;
+    }
+    
+private:
+    static constexpr Type pi = 3.141592653589793238;
+    double currentSampleRate = 0;
+    Type currentTime = 0;
+    Type currentAngle = 0;
+    Type timeStep = 0;
 };
 
 } // namespace tap
