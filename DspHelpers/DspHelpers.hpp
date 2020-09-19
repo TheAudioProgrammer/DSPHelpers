@@ -134,8 +134,8 @@ public:
         // You must set your sample rate in prepareToPlay
         assert (currentSampleRate > 0);
         
-        // Make sure we're not running off the edge of our time max
-        if (currentTime >= std::numeric_limits<float>::max())
+        // Reset time once we complete a cycle
+        if (currentTime >= 1.0)
             currentTime = 0.0;
         
         auto sample = std::sin (2.0 * pi * frequency * currentTime + phaseOffset);
@@ -158,8 +158,8 @@ public:
         // You must set your sample rate in prepareToPlay
         assert (currentSampleRate > 0);
         
-        // Make sure we're not running off the edge of our time max
-        if (currentTime >= std::numeric_limits<float>::max())
+        // Reset time once we complete a cycle
+        if (currentTime >= 1.0)
             currentTime = 0.0;
         
         auto sample = 2.0f * pi * frequency * currentTime + phaseOffset;
@@ -195,8 +195,8 @@ public:
         // You must set your sample rate in prepareToPlay
         assert (currentSampleRate > 0);
         
-        // Make sure we're not running off the edge of our time max
-        if (currentTime >= std::numeric_limits<float>::max())
+        // Reset time once we complete a cycle
+        if (currentTime >= 1.0)
             currentTime = 0.0;
         
         auto sample = 2.0f * pi * frequency * currentTime + phaseOffset;
@@ -213,6 +213,43 @@ public:
         }
                 
         auto output = (1 / 2) - (1 / pi) * sumOfSines;
+        
+        // Need to increment time for the next time this function calls
+        currentTime += timeStep;
+        
+        return output;
+    }
+    
+    /**  Generate an additive Triangle wave by summing odd harmonics
+         of sine waves from the fundamental frequency to the Nyquist.
+         Based on triangle wave additive synthesis equation in Hack Audio by Eric Tarr.
+     */
+    Type processTriangle (const Type& frequency, const int phaseOffset = 0)
+    {
+        // Ensure our frequency is in the range of human hearing
+        assert (frequency >= 20 && frequency <= 20000);
+        
+        // You must set your sample rate in prepareToPlay
+        assert (currentSampleRate > 0);
+        
+        // Reset time once we complete a cycle
+        if (currentTime >= 1.0)
+            currentTime = 0.0;
+        
+        auto sample = 2.0f * pi * frequency * currentTime + phaseOffset;
+        
+        // Find the max harmonic frequency
+        auto maxHarmonic = std::floor (currentSampleRate / (2.0f * frequency));
+        
+        Type sumOfSines = 0.0;
+        
+        // Add sine waves together
+        for (auto harmonic = 1.0; harmonic <= maxHarmonic; harmonic += 2.0)
+        {
+            sumOfSines +=  (1.0 / (harmonic * harmonic)) * std::sin (harmonic * sample);
+        }
+                
+        auto output = (8 / (pi * pi)) * sumOfSines;
         
         // Need to increment time for the next time this function calls
         currentTime += timeStep;
