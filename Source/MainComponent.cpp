@@ -37,7 +37,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     
     for (auto i = 0; i < outputs; ++i)
     {
-        squareWave[i].prepareToPlay (sampleRate);
+        synthWave[i].prepareToPlay (sampleRate);
     }
 }
 
@@ -58,8 +58,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     
         for (auto sample = 0; sample < numSamples; ++sample)
         {
-            //buffer[sample]  = amp * sineWave[channel].calculate (200.0f);
-            buffer[sample] = amp * squareWave[channel].calculate (freq);
+            buffer[sample] = amp * synthWave[channel].processSaw (freq);
             meter.updateRms (buffer[sample], numSamples);
             meter.updatePeakSignal (buffer[sample]);
         }

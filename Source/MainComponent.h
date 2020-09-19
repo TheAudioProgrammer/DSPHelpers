@@ -28,8 +28,7 @@ private:
     static constexpr int outputs = 2;
     
     // You need one DSP algorithm for each channel of audio
-    //tap::SineWave<float> sineWave[outputs];
-    tap::SquareWave<float> squareWave[outputs];
+    tap::SynthWave<float> synthWave[outputs];
     
     tap::Amplitude<float> meter;
     

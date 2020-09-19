@@ -112,7 +112,7 @@ private:
 // =================================================================
 
 template <typename Type>
-class SineWave
+class SynthWave
 {
 public:
     /** Pass the sample rate to the DSP algorithm*/
@@ -126,7 +126,7 @@ public:
          This isn't the most efficient way to generate a sine wave, but it's a good learning
          tool for beginners who are generating sound and learning DSP for the first time.
      */
-    Type calculate (const Type& frequency, const int phaseOffset = 0)
+    Type processSine (const Type& frequency, const int phaseOffset = 0)
     {
         // Ensure our frequency is in the range of human hearing
         assert (frequency >= 20 && frequency <= 20000);
@@ -146,29 +146,11 @@ public:
         return sample;
     }
     
-private:
-    static constexpr Type pi = 3.141592653589793238;
-    double currentSampleRate = 0;
-    Type currentTime = 0;
-    Type timeStep = 0;
-};
-
-template <typename Type>
-class SquareWave
-{
-public:
-    /** Pass the sample rate to the DSP algorithm*/
-    void prepareToPlay (double& sampleRate) noexcept
-    {
-        currentSampleRate = sampleRate;
-        timeStep = 1 / currentSampleRate;
-    }
-    
     /**  Generate an additive square wave by summing odd harmonics
          of sine waves from the fundamental frequency to the Nyquist.
-         Based on square wave additive synthesis function in Hack Audio by Eric Tarr.
+         Based on square wave additive synthesis equation in Hack Audio by Eric Tarr.
      */
-    Type calculate (const Type& frequency)
+    Type processSquare (const Type& frequency, const int phaseOffset = 0)
     {
         // Ensure our frequency is in the range of human hearing
         assert (frequency >= 20 && frequency <= 20000);
@@ -180,7 +162,7 @@ public:
         if (currentTime >= std::numeric_limits<float>::max())
             currentTime = 0.0;
         
-        auto x = 2.0f * pi * frequency * currentTime;
+        auto sample = 2.0f * pi * frequency * currentTime + phaseOffset;
         
         // Find the max harmonic frequency
         auto maxHarmonic = std::floor (currentSampleRate / (2.0f * frequency));
@@ -188,18 +170,54 @@ public:
         Type sumOfSines = 0.0;
         
         // Add sine waves together
-        for (auto harmonic = 1.0; harmonic < maxHarmonic; harmonic += 2.0)
+        for (auto harmonic = 1.0; harmonic <= maxHarmonic; harmonic += 2.0)
         {
-            sumOfSines +=  1.0 / harmonic * std::sin (harmonic * x);
+            sumOfSines +=  1.0 / harmonic * std::sin (harmonic * sample);
         }
                 
-        // Output
-        auto sample = 4 / pi * sumOfSines;
+        auto output = 4 / pi * sumOfSines;
         
         // Need to increment time for the next time this function calls
         currentTime += timeStep;
         
-        return sample;
+        return output;
+    }
+    
+    /**  Generate an additive square wave by summing even harmonics
+         of sine waves from the fundamental frequency to the Nyquist.
+         Based on saw wave additive synthesis equation in Hack Audio by Eric Tarr.
+     */
+    Type processSaw (const Type& frequency, const int phaseOffset = 0)
+    {
+        // Ensure our frequency is in the range of human hearing
+        assert (frequency >= 20 && frequency <= 20000);
+        
+        // You must set your sample rate in prepareToPlay
+        assert (currentSampleRate > 0);
+        
+        // Make sure we're not running off the edge of our time max
+        if (currentTime >= std::numeric_limits<float>::max())
+            currentTime = 0.0;
+        
+        auto sample = 2.0f * pi * frequency * currentTime + phaseOffset;
+        
+        // Find the max harmonic frequency
+        auto maxHarmonic = std::floor (currentSampleRate / (2.0f * frequency));
+        
+        Type sumOfSines = 0.0;
+        
+        // Add sine waves together
+        for (auto harmonic = 1.0; harmonic <= maxHarmonic; ++harmonic)
+        {
+            sumOfSines +=  1.0 / harmonic * std::sin (harmonic * sample);
+        }
+                
+        auto output = (1 / 2) - (1 / pi) * sumOfSines;
+        
+        // Need to increment time for the next time this function calls
+        currentTime += timeStep;
+        
+        return output;
     }
     
 private:
