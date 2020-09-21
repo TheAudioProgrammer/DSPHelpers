@@ -128,9 +128,6 @@ public:
      */
     Type processSine (const Type& frequency, const int phaseOffset = 0)
     {
-        // Ensure our frequency is in the range of human hearing
-        assert (frequency >= 20 && frequency <= 20000);
-        
         // You must set your sample rate in prepareToPlay
         assert (currentSampleRate > 0);
         
@@ -152,9 +149,6 @@ public:
      */
     Type processSquare (const Type& frequency, const int phaseOffset = 0)
     {
-        // Ensure our frequency is in the range of human hearing
-        assert (frequency >= 20 && frequency <= 20000);
-        
         // You must set your sample rate in prepareToPlay
         assert (currentSampleRate > 0);
         
@@ -189,9 +183,6 @@ public:
      */
     Type processSaw (const Type& frequency, const int phaseOffset = 0)
     {
-        // Ensure our frequency is in the range of human hearing
-        assert (frequency >= 20 && frequency <= 20000);
-        
         // You must set your sample rate in prepareToPlay
         assert (currentSampleRate > 0);
         
@@ -226,9 +217,6 @@ public:
      */
     Type processTriangle (const Type& frequency, const int phaseOffset = 0)
     {
-        // Ensure our frequency is in the range of human hearing
-        assert (frequency >= 20 && frequency <= 20000);
-        
         // You must set your sample rate in prepareToPlay
         assert (currentSampleRate > 0);
         
@@ -257,11 +245,109 @@ public:
         return output;
     }
     
+    /**  Generate an additive impulse train by summing harmonics
+         of sine waves from the fundamental frequency to the Nyquist.
+         Based on impulse train additive synthesis equation in Hack Audio by Eric Tarr.
+     */
+    Type processImpulseTrain (const Type& frequency, const int phaseOffset = 0)
+    {
+        // You must set your sample rate in prepareToPlay
+        assert (currentSampleRate > 0);
+        
+        // Reset time once we complete a cycle
+        if (currentTime >= 1.0)
+            currentTime = 0.0;
+        
+        auto sample = 2.0f * pi * frequency * currentTime + phaseOffset;
+        
+        // Find the max harmonic frequency
+        auto maxHarmonic = std::floor (currentSampleRate / (2.0f * frequency));
+        
+        Type sumOfSines = 0.0;
+        
+        // Add sine waves together
+        for (auto harmonic = 1.0; harmonic <= maxHarmonic; ++harmonic)
+        {
+            sumOfSines += std::sin (harmonic * sample);
+        }
+                
+        auto output = (pi / (2 * maxHarmonic)) * sumOfSines;
+        
+        // Need to increment time for the next time this function calls
+        currentTime += timeStep;
+        
+        return output;
+    }
+    
 private:
     static constexpr Type pi = 3.141592653589793238;
     double currentSampleRate = 0;
     Type currentTime = 0;
     Type timeStep = 0;
+};
+
+template <typename Type>
+class Tremolo
+{
+public:
+    enum class WaveType
+    {
+        Sine,
+        Saw,
+        Square,
+        Triangle
+    };
+    
+    /** Pass the sample rate to the DSP algorithm*/
+    void prepareToPlay (double& sampleRate) noexcept
+    {
+        currentSampleRate = sampleRate;
+        modulator.prepareToPlay (sampleRate);
+    }
+    
+    void setFrequency (Type freq) noexcept
+    {
+        frequency = freq;
+    }
+    
+    void setWaveType (const WaveType& type)
+    {
+        waveType = type;
+    }
+    
+    Type processTremolo (Type& sample, float amp)
+    {
+        // Careful!  Your tremolo amp should be between 0.0 and 1.0
+        assert (amp >= 0.0f && amp <= 1.0f);
+        
+        // You must set your sample rate in prepareToPlay
+        assert (currentSampleRate > 0);
+        
+        // You need to set the frequency of your modulator frequency using setFrequency()
+        assert (frequency > 0);
+        
+        return sample * (amp * getModulator());
+    }
+    
+private:
+    SynthWave<Type> modulator;
+    WaveType waveType = WaveType::Sine;
+    double currentSampleRate = 0;
+    Type frequency = 0;
+    
+    Type getModulator()
+    {
+        if (waveType == WaveType::Sine)
+            return std::abs (modulator.processSine (frequency));
+        else if (waveType == WaveType::Saw)
+            return std::abs (modulator.processSaw (frequency));
+        else if (waveType == WaveType::Square)
+            return std::abs (modulator.processSquare (frequency));
+        else if (waveType == WaveType::Triangle)
+            return std::abs (modulator.processTriangle (frequency));
+        else
+            return std::abs (modulator.processSine (frequency));
+    }
 };
 
 } // namespace tap

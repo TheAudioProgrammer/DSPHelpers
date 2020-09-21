@@ -30,14 +30,11 @@ MainComponent::~MainComponent()
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
-//    for (auto i = 0; i < outputs; ++i)
-//    {
-//        sineWave[i].prepareToPlay (sampleRate);
-//    }
-    
     for (auto i = 0; i < outputs; ++i)
     {
-        synthWave[i].prepareToPlay (sampleRate);
+        synthWave1[i].prepareToPlay (sampleRate);
+        synthWave2[i].prepareToPlay (sampleRate);
+        tremolo[i].prepareToPlay (sampleRate);
     }
 }
 
@@ -46,8 +43,6 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     bufferToFill.clearActiveBufferRegion();
     
     auto numSamples = bufferToFill.buffer->getNumSamples();
-    auto amp = 0.125f;
-    auto freq = 150.0f;
     
     for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
     {
@@ -55,12 +50,17 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         jassert (bufferToFill.buffer->getNumChannels() == outputs);
         
         auto* buffer  = bufferToFill.buffer->getWritePointer (channel, bufferToFill.startSample);
+        
+        tremolo[channel].setFrequency (5.0f);
+        tremolo[channel].setWaveType (tap::Tremolo<float>::WaveType::Square);
     
         for (auto sample = 0; sample < numSamples; ++sample)
         {
-            buffer[sample] = amp * synthWave[channel].processSaw (freq);
+            buffer[sample] = 0.125f * synthWave1[channel].processSaw (200.0f);
+            buffer[sample] =  tremolo[channel].processTremolo (buffer[sample], 0.5f);
+            
             meter.updateRms (buffer[sample], numSamples);
-            meter.updatePeakSignal (buffer[sample]);
+            meter.updatePeakSignal (buffer[sample]);            
         }
     }
 }
