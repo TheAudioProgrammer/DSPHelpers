@@ -286,18 +286,20 @@ private:
     Type timeStep = 0;
 };
 
+// =================================================================
+
+enum class TremoloWaveType
+{
+    Sine,
+    Saw,
+    Square,
+    Triangle
+};
+
 template <typename Type>
 class Tremolo
 {
 public:
-    enum class WaveType
-    {
-        Sine,
-        Saw,
-        Square,
-        Triangle
-    };
-    
     /** Pass the sample rate to the DSP algorithm*/
     void prepareToPlay (double& sampleRate) noexcept
     {
@@ -310,7 +312,7 @@ public:
         frequency = freq;
     }
     
-    void setWaveType (const WaveType& type)
+    void setWaveType (const TremoloWaveType& type) noexcept
     {
         waveType = type;
     }
@@ -331,22 +333,25 @@ public:
     
 private:
     SynthWave<Type> modulator;
-    WaveType waveType = WaveType::Sine;
+    TremoloWaveType waveType = TremoloWaveType::Sine;
     double currentSampleRate = 0;
     Type frequency = 0;
     
     Type getModulator()
     {
-        if (waveType == WaveType::Sine)
-            return std::abs (modulator.processSine (frequency));
-        else if (waveType == WaveType::Saw)
-            return std::abs (modulator.processSaw (frequency));
-        else if (waveType == WaveType::Square)
-            return std::abs (modulator.processSquare (frequency));
-        else if (waveType == WaveType::Triangle)
-            return std::abs (modulator.processTriangle (frequency));
-        else
-            return std::abs (modulator.processSine (frequency));
+        switch (waveType)
+        {
+            case (TremoloWaveType::Sine):
+                return std::abs (modulator.processSine (frequency));
+            case (TremoloWaveType::Saw):
+                return std::abs (modulator.processSaw (frequency));
+            case (TremoloWaveType::Square):
+                return std::abs (modulator.processSquare (frequency));
+            case (TremoloWaveType::Triangle):
+                return std::abs (modulator.processTriangle (frequency));
+            default:
+                return std::abs (modulator.processSine (frequency));
+        }
     }
 };
 

@@ -52,7 +52,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         auto* buffer  = bufferToFill.buffer->getWritePointer (channel, bufferToFill.startSample);
         
         tremolo[channel].setFrequency (5.0f);
-        tremolo[channel].setWaveType (tap::Tremolo<float>::WaveType::Square);
+        tremolo[channel].setWaveType (tap::TremoloWaveType::Sine);
     
         for (auto sample = 0; sample < numSamples; ++sample)
         {
