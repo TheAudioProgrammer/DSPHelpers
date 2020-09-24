@@ -288,6 +288,7 @@ private:
 
 // =================================================================
 
+/** Allows selection of the tremolo wave type in the tremolo class*/
 enum class TremoloWaveType
 {
     Sine,
@@ -295,6 +296,8 @@ enum class TremoloWaveType
     Square,
     Triangle
 };
+
+// =================================================================
 
 template <typename Type>
 class Tremolo
@@ -317,7 +320,7 @@ public:
         waveType = type;
     }
     
-    Type processTremolo (Type& sample, float amp)
+    Type process (Type& sample, float amp)
     {
         // Careful!  Your tremolo amp should be between 0.0 and 1.0
         assert (amp >= 0.0f && amp <= 1.0f);
@@ -353,6 +356,111 @@ private:
                 return std::abs (modulator.processSine (frequency));
         }
     }
+};
+
+// =================================================================
+
+enum class FadeType
+{
+    In,
+    Out
+};
+
+template <typename Type>
+class AmplitudeFade
+{
+public:
+    /** Build a ramp between 0 and 1 to use for fade ins or fade outs.  A curve of 1 will give a linear curve, less than 1 makes the curve more exponential,
+        and more than 1 makes the curve more logarithmic.  Curve function courtesy of Pelle in the TAP Discord.
+     */
+    
+    void buildRamp (const int numSamplesToFade, const FadeType& fadeInOrOut, float curve) noexcept
+    {
+        // Prevent division by 0
+        if (curve == 0.0f)
+            curve = 0.1f;
+        
+        auto start = fadeType == FadeType::Out ? 1.0f : 0.0f;
+        auto end   = fadeType == FadeType::Out ? 0.0f : 1.0f;
+        
+        // Linear fade
+        for (int i = 0; i < numSamplesToFade; ++i)
+        {
+            auto x = start + (end - start) * (i / numSamplesToFade);
+            fadeRamp[i] = (std::expf (curve * x) - 1) / (std::expf (curve) - 1);
+        }
+    }
+    
+private:
+    // Array to hold ramp values (max buffer size of 8196)
+    static constexpr int rampSize = 8192;
+    Type fadeRamp [rampSize] = 0;
+    FadeType fadeType = FadeType::In;
+    
+};
+
+// =================================================================
+
+enum class PanningType
+{
+    Linear,             // Equal amplitude panning
+    PowerSineLaw,       // Equal power panning using sine law
+    PowerSquareLaw,     // Equal power panning using square law
+    ModifiedSineLaw,    // Offers benefits of amplitude and power using modified sine law
+    ModifiedSquareLaw   // Offers benefits of amplitude and power using modified square law
+};
+
+template <typename Type>
+class Panner
+{
+public:
+    void setPanningType (const PanningType& type) noexcept
+    {
+        panningType = type;
+    }
+    
+    Type process (const int& channel, Type& sample, const Type& panValue, const int& numChannels)
+    {
+        /* Expects a panning parameter with a range of -0.0 to 1.0 where
+           0.5 is center, -0.0 is only the left speaker, and 1.0 is the right speaker */
+        assert (panValue >= 0.0 && panValue <= 1.0);
+        
+        // Only works for a stereo signal
+        assert (numChannels == 2);
+        
+        switch (panningType)
+        {
+            case PanningType::Linear:
+                return channel == 0 ? sample * (1.0 - panValue)
+                                    : sample * (panValue);
+                break;
+            case PanningType::PowerSineLaw:
+                return channel == 0 ? sample * (std::sin ((1.0 - panValue) * pi / 2.0))
+                                    : sample * (std::sin (panValue * pi / 2.0));
+                break;
+            case PanningType::PowerSquareLaw:
+                return channel == 0 ? sample * (std::sqrt (1.0 - panValue))
+                                    : sample * (std::sqrt (panValue));
+                break;
+            case PanningType::ModifiedSineLaw:
+                return channel == 0 ? sample * (std::pow (1.0 - panValue, 0.75))
+                                    : sample * (std::pow (panValue, 0.75));
+                break;
+            case PanningType::ModifiedSquareLaw:
+                return channel == 0 ? sample * (std::sqrt ((1 - panValue) * std::sin ((1 - panValue) * pi / 2.0)))
+                                    : sample * (std::sqrt (panValue * std::sin (panValue * pi / 2.0)));
+                break;
+            default:
+                // Linear
+                return channel == 0 ? sample * (-1.0 * ((0.5 * panValue) - 0.5))
+                                    : sample * ((0.5 * panValue) + 0.5);
+                break;
+        }
+    }
+    
+private:
+    static constexpr Type pi = 3.141592653589793238;
+    PanningType panningType = PanningType::Linear;
 };
 
 } // namespace tap

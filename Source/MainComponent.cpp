@@ -3,8 +3,12 @@
 //==============================================================================
 MainComponent::MainComponent()
 {
-    // Make sure you set the size of the component after
-    // you add any child components.
+    slider.setSliderStyle (juce::Slider::SliderStyle::LinearHorizontal);
+    slider.setRange (0.0f, 1.0f);
+    slider.setValue (0.5f);
+    slider.onValueChange = [&]() { sliderValue.store (slider.getValue()); };
+    addAndMakeVisible (slider);
+    
     setSize (800, 600);
 
     // Some platforms require permissions to open input channels so request that here
@@ -23,7 +27,6 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
-    // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 }
 
@@ -53,14 +56,17 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         
         tremolo[channel].setFrequency (5.0f);
         tremolo[channel].setWaveType (tap::TremoloWaveType::Sine);
+        panner.setPanningType (tap::PanningType::PowerSquareLaw);
     
         for (auto sample = 0; sample < numSamples; ++sample)
         {
             buffer[sample] = 0.125f * synthWave1[channel].processSaw (200.0f);
-            buffer[sample] =  tremolo[channel].processTremolo (buffer[sample], 0.5f);
+            buffer[sample] =  tremolo[channel].process (buffer[sample], 0.5f);
             
             meter.updateRms (buffer[sample], numSamples);
-            meter.updatePeakSignal (buffer[sample]);            
+            meter.updatePeakSignal (buffer[sample]);
+            juce::jmap(buffer[sample], 0.0f, 1.0f);
+            buffer[sample] = panner.process (channel, buffer[sample], sliderValue.load(), bufferToFill.buffer->getNumChannels());
         }
     }
 }
@@ -84,7 +90,6 @@ void MainComponent::paint (juce::Graphics& g)
 
 void MainComponent::resized()
 {
-    // This is called when the MainContentComponent is resized.
-    // If you add any child components, this is where you should
-    // update their positions.
+    slider.setBounds (getLocalBounds().reduced (30));
 }
+

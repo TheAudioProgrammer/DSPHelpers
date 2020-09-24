@@ -9,6 +9,7 @@
     your controls and content.
 */
 class MainComponent  : public juce::AudioAppComponent
+                      
 {
 public:
     //==============================================================================
@@ -30,13 +31,13 @@ private:
     // You need one DSP algorithm for each channel of audio
     tap::SynthWave<float> synthWave1[outputs];
     tap::SynthWave<float> synthWave2[outputs];
-    tap::Tremolo<float>   tremolo[outputs];
+    tap::Tremolo<float>   tremolo   [outputs];
     
     tap::Amplitude<float> meter;
+    tap::Panner<float> panner;
     
-    //==============================================================================
-    // Your private member variables go here...
-
-
+    juce::Slider slider;
+    std::atomic<float> sliderValue { 0.0 };
+        
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
