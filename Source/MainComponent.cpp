@@ -52,7 +52,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         // I intentionally made this stereo only for simplicity
         jassert (bufferToFill.buffer->getNumChannels() == outputs);
         
-        auto* buffer  = bufferToFill.buffer->getWritePointer (channel, bufferToFill.startSample);
+        auto* buffer = bufferToFill.buffer->getWritePointer (channel, bufferToFill.startSample);
         
         tremolo[channel].setFrequency (5.0f);
         tremolo[channel].setWaveType (tap::TremoloWaveType::Sine);

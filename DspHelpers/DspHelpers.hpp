@@ -428,32 +428,24 @@ public:
         // Only works for a stereo signal
         assert (numChannels == 2);
         
+        auto value = channel == 0 ? 1.0 - panValue : panValue;
+        
         switch (panningType)
         {
             case PanningType::Linear:
-                return channel == 0 ? sample * (1.0 - panValue)
-                                    : sample * (panValue);
+                return sample * (value);
                 break;
             case PanningType::PowerSineLaw:
-                return channel == 0 ? sample * (std::sin ((1.0 - panValue) * pi / 2.0))
-                                    : sample * (std::sin (panValue * pi / 2.0));
+                return sample * (std::sin ((value) * pi / 2.0));
                 break;
             case PanningType::PowerSquareLaw:
-                return channel == 0 ? sample * (std::sqrt (1.0 - panValue))
-                                    : sample * (std::sqrt (panValue));
+                return sample * (std::sqrt (value));
                 break;
             case PanningType::ModifiedSineLaw:
-                return channel == 0 ? sample * (std::pow (1.0 - panValue, 0.75))
-                                    : sample * (std::pow (panValue, 0.75));
+                return sample * (std::pow (value, 0.75));
                 break;
             case PanningType::ModifiedSquareLaw:
-                return channel == 0 ? sample * (std::sqrt ((1 - panValue) * std::sin ((1 - panValue) * pi / 2.0)))
-                                    : sample * (std::sqrt (panValue * std::sin (panValue * pi / 2.0)));
-                break;
-            default:
-                // Linear
-                return channel == 0 ? sample * (-1.0 * ((0.5 * panValue) - 0.5))
-                                    : sample * ((0.5 * panValue) + 0.5);
+                return sample * (std::sqrt ((value) * std::sin ((value) * pi / 2.0)));
                 break;
         }
     }
@@ -461,6 +453,53 @@ public:
 private:
     static constexpr Type pi = 3.141592653589793238;
     PanningType panningType = PanningType::Linear;
+};
+
+// =================================================================
+
+/**
+    A class for encoding a stereo signal into mid / side components for further processing,
+    or for decoding a mid / side signal into a stereo signal
+ */
+
+template <typename Type>
+class MidSideProcessing
+{
+public:
+    /** Encodes a stereo signal into mid and side signals */
+    Type encode (const int& channel, Type& leftSample, Type& rightSample)
+    {
+        // Only works on stereo signal
+        assert (channel >= 0 && channel <= 1);
+        
+        return channel == 0 ? 0.5 * leftSample - rightSample
+                            : 0.5 * leftSample + rightSample;
+    }
+    
+    /** Decodes a mid and side signal into a stereo signal */
+    Type decode (const int& channel, Type& middleSample, Type& sideSample)
+    {
+        // Only works on stereo signal
+        assert (channel >= 0 && channel <= 1);
+        
+        return channel == 0 ? middleSample + sideSample
+                            : middleSample - sideSample;
+    }
+    
+    /**
+        Encodes a stereo signal into mid and side signals while narrowing or widening the stereo field.
+        A factor less than 1 will return a narrowed signal, while a factor more than 1 will return a widened signal
+     */
+    
+    Type stereoFieldNarrowOrWiden (const int& channel, Type& leftSample, Type& rightSample, Type& factor)
+    {
+        // Only works on stereo signal
+        assert (channel >= 0 && channel <= 1);
+        
+        // channel == 0 returns the side signal, channel == 1 returns the mid signal.
+        return channel == 0 ? factor * (leftSample - rightSample)
+                            : (2 - factor) * (leftSample + rightSample);
+    }
 };
 
 } // namespace tap
