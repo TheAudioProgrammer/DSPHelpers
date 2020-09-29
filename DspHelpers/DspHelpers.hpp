@@ -18,7 +18,7 @@
 #include <numeric>
 #include <cassert>
 
-// A simple collection of helpful DSP algorithms with no dependencies.  
+// A simple collection of helpful DSP algorithms with no dependencies.  Many of these algorithms were 
 
 namespace tap
 {
@@ -500,6 +500,39 @@ public:
         return channel == 0 ? factor * (leftSample - rightSample)
                             : (2 - factor) * (leftSample + rightSample);
     }
+};
+
+/**
+    A class for converting a stereo signal to polar coordinates, then to Cartesian coordinates for the purpose
+    of creating a goniometer to visualize a stereo signal.
+ */
+
+template <typename Type>
+class Goniometer
+{
+public:
+    /** Calculate polar coordinates from a stereo sample */
+    std::tuple<Type, Type> calculatePolarCoordinates (const Type& leftSample, const Type& rightSample)
+    {
+        auto theta  = std::atan2 (leftSample / rightSample) + pi / 4.0;
+        auto radius = std::sqrt ((leftSample * leftSample) + (rightSample * rightSample));
+        return std::make_tuple (theta, radius);
+    }
+    
+    /** Convert polar coordinates to Cartesian coordinates */
+    std::tuple<Type, Type> calculateCartesianCoordinates (std::tuple<Type, Type>& radiusAndTheta)
+    {
+        auto radius = std::get<0>(radiusAndTheta);
+        auto theta  = std::get<1>(radiusAndTheta);
+        
+        auto x = radius * std::cos (theta);
+        auto y = radius * std::sin (theta);
+        
+        return std::make_tuple (x, y);
+    }
+    
+private:
+    static constexpr Type pi = 3.141592653589793238;
 };
 
 } // namespace tap
