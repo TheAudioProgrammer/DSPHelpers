@@ -60,13 +60,16 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     
         for (auto sample = 0; sample < numSamples; ++sample)
         {
-            buffer[sample] = 0.125f * synthWave1[channel].processSaw (200.0f);
-            buffer[sample] =  tremolo[channel].process (buffer[sample], 0.5f);
+            buffer[sample] = 0.125f * synthWave1[channel].processSine (200.0f);
+            //buffer[sample] =  tremolo[channel].process (buffer[sample], 0.5f);
             
-            meter.updateRms (buffer[sample], numSamples);
-            meter.updatePeakSignal (buffer[sample]);
-            juce::jmap(buffer[sample], 0.0f, 1.0f);
+//            meter.updateRms (buffer[sample], numSamples);
+//            meter.updatePeakSignal (buffer[sample]);
+
             buffer[sample] = panner.process (channel, buffer[sample], sliderValue.load(), bufferToFill.buffer->getNumChannels());
+            
+            //buffer[sample] = distortion[channel].processArcTan (buffer[sample], 10.0);
+            buffer[sample] = distortion[channel].processHardClipping (buffer[sample], 0.0);
         }
     }
 }

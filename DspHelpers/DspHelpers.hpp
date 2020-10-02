@@ -514,7 +514,7 @@ public:
     /** Calculate polar coordinates from a stereo sample */
     std::tuple<Type, Type> calculatePolarCoordinates (const Type& leftSample, const Type& rightSample)
     {
-        auto theta  = std::atan2 (leftSample / rightSample) + pi / 4.0;
+        auto theta  = std::atan2 (leftSample, rightSample);
         auto radius = std::sqrt ((leftSample * leftSample) + (rightSample * rightSample));
         return std::make_tuple (theta, radius);
     }
@@ -529,6 +529,57 @@ public:
         auto y = radius * std::sin (theta);
         
         return std::make_tuple (x, y);
+    }
+    
+private:
+    static constexpr Type pi = 3.141592653589793238;
+};
+
+template <typename Type>
+class Distortion
+{
+public:
+    Type processInfiniteClipping (Type& sample)
+    {
+        if (sample == 0.0)
+            return 0.0;
+        else
+            return sample >= 0.0 ? 1.0 : -1.0;
+    }
+    
+    Type processHalfWaveRectification (Type& sample)
+    {
+        return sample < 0.0 ? 0.0 : sample;
+    }
+    
+    Type processFullWaveRectification (Type& sample)
+    {
+        return sample < 0.0 ? std::abs (sample) : sample;
+    }
+    
+    Type processHardClipping (Type& sample, const Type& maxThresh)
+    {
+        //Values should be between 0.0 and 1.0
+        assert (maxThresh >= 0.0 && maxThresh <= 1.0);
+        
+        if (sample >= maxThresh)
+            return maxThresh;
+        else if (sample <= -maxThresh)
+            return -maxThresh;
+        else
+            return sample;
+    }
+    
+    Type processCubic (Type& sample)
+    {
+        return sample - 1 / 3 * (sample * sample * sample);
+    }
+    
+    Type processArcTan (Type& sample, const Type& coefficient)
+    {
+        // The coefficient should be between 1.0 and 10.0
+        assert (coefficient >= 1.0 && coefficient <= 10.0);
+        return 2 / pi * std::atan (coefficient * sample);
     }
     
 private:
