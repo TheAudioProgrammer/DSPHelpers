@@ -66,10 +66,12 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
 //            meter.updateRms (buffer[sample], numSamples);
 //            meter.updatePeakSignal (buffer[sample]);
 
-            buffer[sample] = panner.process (channel, buffer[sample], sliderValue.load(), bufferToFill.buffer->getNumChannels());
+           // buffer[sample] = panner.process (channel, buffer[sample], sliderValue.load(), bufferToFill.buffer->getNumChannels());
             
             //buffer[sample] = distortion[channel].processArcTan (buffer[sample], 10.0);
-            buffer[sample] = distortion[channel].processHardClipping (buffer[sample], 0.0);
+            buffer[sample] = distortion[channel].processExponentialSoftClipping (sample, 1.0);
+            //buffer[sample] = distortion[channel].processHardClipping (buffer[sample], 0.01);
+            //buffer[sample] = distortion[channel].processCubic (sample);
         }
     }
 }

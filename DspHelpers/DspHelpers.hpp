@@ -18,7 +18,7 @@
 #include <numeric>
 #include <cassert>
 
-// A simple collection of helpful DSP algorithms with no dependencies.  Many of these algorithms were 
+// A simple collection of helpful DSP algorithms with no dependencies.  Many of these algorithms were derived from equations found in "Hack Audio" by Eric Tarr -- please support here https://www.amazon.co.uk/Hack-Audio-Introduction-Programming-Engineering/dp/1138497541
 
 namespace tap
 {
@@ -539,7 +539,7 @@ template <typename Type>
 class Distortion
 {
 public:
-    Type processInfiniteClipping (Type& sample)
+    Type processInfiniteClipping (const Type& sample)
     {
         if (sample == 0.0)
             return 0.0;
@@ -547,20 +547,20 @@ public:
             return sample >= 0.0 ? 1.0 : -1.0;
     }
     
-    Type processHalfWaveRectification (Type& sample)
+    Type processHalfWaveRectification (const Type& sample)
     {
         return sample < 0.0 ? 0.0 : sample;
     }
     
-    Type processFullWaveRectification (Type& sample)
+    Type processFullWaveRectification (const Type& sample)
     {
         return sample < 0.0 ? std::abs (sample) : sample;
     }
     
-    Type processHardClipping (Type& sample, const Type& maxThresh)
+    Type processHardClipping (const Type& sample, const Type& maxThresh)
     {
-        //Values should be between 0.0 and 1.0
-        assert (maxThresh >= 0.0 && maxThresh <= 1.0);
+        //Values should be between 0.01 and 1.0
+        assert (maxThresh > 0.0 && maxThresh <= 1.0);
         
         if (sample >= maxThresh)
             return maxThresh;
@@ -570,16 +570,45 @@ public:
             return sample;
     }
     
-    Type processCubic (Type& sample)
+    Type processCubic (const Type& sample)
     {
         return sample - 1 / 3 * (sample * sample * sample);
     }
     
-    Type processArcTan (Type& sample, const Type& coefficient)
+    Type processArcTan (const Type& sample, const Type& coefficient)
     {
         // The coefficient should be between 1.0 and 10.0
         assert (coefficient >= 1.0 && coefficient <= 10.0);
         return 2 / pi * std::atan (coefficient * sample);
+    }
+    
+    Type processSineDistortion (const Type& sample)
+    {
+        return std::sin (2.0 * pi * sample);
+    }
+    
+    Type processExponentialSoftClipping (const Type& sample, const Type& gain)
+    {
+        // Gain should be between 1.0 and 10.0
+        assert (gain >= 1.0 && gain <= 10.0);
+        return (sample / std::abs (sample)) * (1 - std::exp (-std::abs (gain * sample)));
+    }
+    
+    Type processPieceWiseOverdrive (const Type& sample)
+    {
+        auto abSample = std::abs (sample);
+        
+        if (abSample > 0.0 && abSample < 1 / 3)
+            return 2.0 * sample;
+        else if (abSample > 1 / 3 && abSample < 2 / 3)
+            return (sample / std::abs (sample)) * (3 - (2 - 3 * (sample * sample)) / 3);
+        else
+            return sample / std::abs (sample);
+    }
+    
+    Type processDiodeClipping (const Type& sample, const Type thermalVoltage = .0253, const Type emissionCoef = 1.68, const Type saturation = .105)
+    {
+        return saturation * (std::exp (0.1 * sample / emissionCoef * thermalVoltage) - 1.0);
     }
     
 private:
