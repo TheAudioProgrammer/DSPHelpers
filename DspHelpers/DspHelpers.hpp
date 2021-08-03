@@ -591,17 +591,17 @@ public:
     {
         // Gain should be between 1.0 and 10.0
         assert (gain >= 1.0 && gain <= 10.0);
-        return (sample / std::abs (sample)) * (1 - std::exp (-std::abs (gain * sample)));
+        return (sample / std::abs (sample)) * (1.0 - std::exp (-std::abs (gain * sample)));
     }
     
     Type processPieceWiseOverdrive (const Type& sample)
     {
         auto abSample = std::abs (sample);
         
-        if (abSample > 0.0 && abSample < 1 / 3)
+        if (abSample > 0.0 && abSample < 1.0 / 3.0)
             return 2.0 * sample;
-        else if (abSample > 1 / 3 && abSample < 2 / 3)
-            return (sample / std::abs (sample)) * (3 - (2 - 3 * (sample * sample)) / 3);
+        else if (abSample > 1.0 / 3.0 && abSample < 2.0 / 3.0)
+            return (sample / std::abs (sample)) * (3.0 - (2.0 - 3.0 * (sample * sample)) / 3.0);
         else
             return sample / std::abs (sample);
     }
@@ -609,6 +609,12 @@ public:
     Type processDiodeClipping (const Type& sample, const Type thermalVoltage = .0253, const Type emissionCoef = 1.68, const Type saturation = .105)
     {
         return saturation * (std::exp (0.1 * sample / emissionCoef * thermalVoltage) - 1.0);
+    }
+    
+    Type processBitCrush (const Type& sample, const Type& numBits)
+    {
+        Type bits = 2.0 / std::pow (2.0, numBits - 1.0);
+        return bits * std::round (sample / bits);
     }
     
 private:

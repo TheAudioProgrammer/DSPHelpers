@@ -53,25 +53,12 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         jassert (bufferToFill.buffer->getNumChannels() == outputs);
         
         auto* buffer = bufferToFill.buffer->getWritePointer (channel, bufferToFill.startSample);
-        
-        tremolo[channel].setFrequency (5.0f);
-        tremolo[channel].setWaveType (tap::TremoloWaveType::Sine);
-        panner.setPanningType (tap::PanningType::PowerSquareLaw);
     
         for (auto sample = 0; sample < numSamples; ++sample)
         {
-            buffer[sample] = 0.125f * synthWave1[channel].processSine (200.0f);
-            //buffer[sample] =  tremolo[channel].process (buffer[sample], 0.5f);
-            
-//            meter.updateRms (buffer[sample], numSamples);
-//            meter.updatePeakSignal (buffer[sample]);
-
-           // buffer[sample] = panner.process (channel, buffer[sample], sliderValue.load(), bufferToFill.buffer->getNumChannels());
-            
-            //buffer[sample] = distortion[channel].processArcTan (buffer[sample], 10.0);
-            buffer[sample] = distortion[channel].processExponentialSoftClipping (sample, 1.0);
-            //buffer[sample] = distortion[channel].processHardClipping (buffer[sample], 0.01);
-            //buffer[sample] = distortion[channel].processCubic (sample);
+            buffer[sample] = synthWave1[channel].processSine (200.0f);
+            buffer[sample] = distortion[channel].processBitCrush (buffer[sample], 4.0f);
+            buffer[sample] *= 0.125f;
         }
     }
 }
@@ -98,3 +85,20 @@ void MainComponent::resized()
     slider.setBounds (getLocalBounds().reduced (30));
 }
 
+
+
+
+//tremolo[channel].setFrequency (5.0f);
+//tremolo[channel].setWaveType (tap::TremoloWaveType::Sine);
+//panner.setPanningType (tap::PanningType::PowerSquareLaw);
+//buffer[sample] =  tremolo[channel].process (buffer[sample], 0.5f);
+
+//            meter.updateRms (buffer[sample], numSamples);
+//            meter.updatePeakSignal (buffer[sample]);
+
+// buffer[sample] = panner.process (channel, buffer[sample], sliderValue.load(), bufferToFill.buffer->getNumChannels());
+
+//buffer[sample] = distortion[channel].processArcTan (buffer[sample], 10.0);
+//buffer[sample] = distortion[channel].processExponentialSoftClipping (sample, 1.0);
+//buffer[sample] = distortion[channel].processHardClipping (buffer[sample], 0.01);
+//buffer[sample] = distortion[channel].processCubic (sample);
